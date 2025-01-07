@@ -1,8 +1,10 @@
 from collections import defaultdict
+from dotenv import load_dotenv
 from enum import Enum
-from fpdf import FPDF
-import io
+import os
 import pandas as pd
+from functions import *
+import plotly.express as px
 from pymongo import MongoClient
 import streamlit as st
 
@@ -11,44 +13,9 @@ class Format(Enum):
     Excel = 'Excel'
     PDF = 'PDF'
 
-def export_to_csv(dataframe: pd.DataFrame):
-    csv = dataframe.to_csv(index=False, sep=';')
-    
-    return csv
+load_dotenv()
 
-def export_to_excel(dataframe: pd.DataFrame):
-    buffer = io.BytesIO()
-    writer = pd.ExcelWriter(buffer, engine='xlsxwriter')
-    dataframe.to_excel(writer, index=False)
-    writer.close()
-
-    return buffer
-
-def export_to_pdf(dataframe: pd.DataFrame):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.add_font("DejaVuSans", "", "./DejaVuSans.ttf")
-    pdf.add_font("DejaVuSans", "B", "./DejaVuSans-Bold.ttf")
-    pdf.set_font("DejaVuSans", size=12)
-
-    pdf.write_html(dataframe.to_html(index=False).replace('<td>', '<td align="center" bgcolor="#D3D3D3">'))
-    
-    return pdf
-
-def fetch_data(client: MongoClient, db_name: str, collection_name: str, query: dict | None=None):
-    try:
-        db = client[db_name]
-        collection = db[collection_name]
-        query = query or {}
-        documents = list(collection.find(query))
-        
-        return documents
-    
-    except Exception as e:
-        print(f"Error fetching data: {e}")
-        
-        return []
-
+MONGODB_URI = os.getenv('MONGODB_URI')
 
 st.set_page_config(page_title="TASS", page_icon="💬", layout="wide")
 
@@ -58,10 +25,8 @@ st.write('Welcome to the application that allows analysis of reimbursed medicine
 # --- Input Section ---
 st.header('Input Parameters')
 
-mongodb_uri = "mongodb+srv://tass-user:IAANHGvQ43hJn0qA@tass.r5pvw.mongodb.net/"
-
 try:
-    client = MongoClient(mongodb_uri)
+    client = MongoClient(MONGODB_URI)
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
     exit()
@@ -115,9 +80,6 @@ if filtered_medicines:
 else:
     st.write('No medicines selected.')
 
-# --- Visualizations Section ---
-st.header('Visualizations')
-
 # --- Shares Table ---
 st.subheader('Shares Table')
 shares_data = []
@@ -134,9 +96,20 @@ if shares_data:
 else:
     st.write('No data to display for selected entities and substances.')
 
+# --- Visualizations Section ---
+st.header('Visualizations')
+
+df_entity_shares = create_entity_shares_data(selected_entities, selected_substances, shares)
+entities_fig = px.pie(df_entity_shares, names='Entities', values='Shares', title='Entity share in reimbursments')
+st.plotly_chart(entities_fig)
+
+df_substance_shares = create_substance_shares_data(selected_entities, selected_substances, shares)
+substances_fig = px.pie(df_substance_shares, names='Substances', values='Shares', title='Substance share in reimbursments')
+st.plotly_chart(substances_fig)
+
 with st.expander('Export Data', expanded=False):
     # Data Export format selection
-    selected_format = st.selectbox('', [f.value for f in Format], key='format_select', 
+    selected_format = st.selectbox('_', [f.value for f in Format], key='format_select', 
                                    disabled=df_shares.empty, label_visibility="collapsed", 
                                    index=None, placeholder="Select export format...")
 
