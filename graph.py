@@ -140,7 +140,7 @@ g_nodes = nx.number_of_nodes(G)
 g_edges = nx.number_of_edges(G)
 
 print("------------------------------------------")
-print("Właściwości grafu:")
+print("Własności grafu:")
 print("Pętle:", g_loops)
 print("Rząd:", g_nodes)
 print("Rozmiar:", g_edges)
