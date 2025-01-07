@@ -1,3 +1,5 @@
+import random
+import numpy as np
 import pandas as pd
 import networkx as nx
 
@@ -129,4 +131,75 @@ for k1, v1 in substance_groups.items():
         print(v2[0], "|", k2, "=", v2[1] / 100, "PLN")
     
     print("-----------------------------------------------------------------------------\n")
- 
+
+
+############################################################
+
+g_loops = nx.number_of_selfloops(G)
+g_nodes = nx.number_of_nodes(G)
+g_edges = nx.number_of_edges(G)
+
+print("------------------------------------------")
+print("Właściwości grafu:")
+print("Pętle:", g_loops)
+print("Rząd:", g_nodes)
+print("Rozmiar:", g_edges)
+print("------------------------------------------")
+
+############################################################
+
+if not nx.is_connected(G):
+    largest_component = max(list(nx.connected_components(G)))
+    G = G.subgraph(largest_component)
+
+g_nodes = nx.number_of_nodes(G)
+g_edges = nx.number_of_edges(G)
+
+print("\n------------------------------------------")
+print("Największa składowa spójna grafu:")
+print("Rząd:", g_nodes)
+print("Rozmiar:", g_edges)
+print("------------------------------------------")
+
+############################################################
+
+seed = 0
+sample_sizes = [100, 1000, 10000]
+
+random.seed(seed)
+np.random.seed(seed)
+
+results = {}
+nodes = list(G.nodes())
+n = len(nodes)
+print("\n------------------------------------------")
+print("Aproksymacja średniej długości ścieżki:")
+
+for sample_size in sample_sizes:
+    path_lengths = []
+
+    source_nodes = np.random.choice(nodes, sample_size, replace=True)
+    target_nodes = np.random.choice(nodes, sample_size, replace=True)
+
+    for source, target in zip(source_nodes, target_nodes):
+        if source != target:
+            try:
+                length = nx.shortest_path_length(G, source, target)
+                path_lengths.append(length)
+            except nx.NetworkXNoPath:
+                continue
+
+    avg_length = np.mean(path_lengths)
+    std_dev = np.std(path_lengths)
+
+    results[sample_size] = {"Liczba par wierzchołków:": len(path_lengths),
+                            "Średnia długość:": avg_length,
+                            "Odchylenie standardowe:": std_dev}
+
+print("------------------------------------------")
+
+for key in results.keys():
+    for k, v in results[key].items():
+        print(k, v)
+
+    print("------------------------------------------")
