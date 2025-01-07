@@ -1,23 +1,41 @@
+from collections import defaultdict
+from enum import Enum
+from fpdf import FPDF
+import io
 import pandas as pd
+from pymongo import MongoClient
 import streamlit as st
 
-from pymongo import MongoClient
-from collections import defaultdict
+class Format(Enum):
+    CSV = 'CSV'
+    Excel = 'Excel'
+    PDF = 'PDF'
 
-
-def export_to_csv(dataframe):
-    csv = dataframe.to_csv()
+def export_to_csv(dataframe: pd.DataFrame):
+    csv = dataframe.to_csv(index=False, sep=';')
     
     return csv
 
+def export_to_excel(dataframe: pd.DataFrame):
+    buffer = io.BytesIO()
+    writer = pd.ExcelWriter(buffer, engine='xlsxwriter')
+    dataframe.to_excel(writer, index=False)
+    writer.close()
 
-def export_to_excel(dataframe, output_path="shares_table.xlsx"):
-    dataframe.to_excel(output_path, index=False)
+    return buffer
+
+def export_to_pdf(dataframe: pd.DataFrame):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.add_font("DejaVuSans", "", "./DejaVuSans.ttf")
+    pdf.add_font("DejaVuSans", "B", "./DejaVuSans-Bold.ttf")
+    pdf.set_font("DejaVuSans", size=12)
+
+    pdf.write_html(dataframe.to_html(index=False).replace('<td>', '<td align="center" bgcolor="#D3D3D3">'))
     
-    return output_path
+    return pdf
 
-
-def fetch_data(client, db_name, collection_name, query=None):
+def fetch_data(client: MongoClient, db_name: str, collection_name: str, query: dict | None=None):
     try:
         db = client[db_name]
         collection = db[collection_name]
@@ -118,21 +136,38 @@ else:
 
 with st.expander('Export Data', expanded=False):
     # Data Export format selection
-    formats = ['CSV', 'Excel', 'PDF']
-    selected_format = st.selectbox('Select export format:', formats, key='format_select')
+    selected_format = st.selectbox('', [f.value for f in Format], key='format_select', 
+                                   disabled=df_shares.empty, label_visibility="collapsed", 
+                                   index=None, placeholder="Select export format...")
 
     # --- Export Button ---
-    if not df_shares.empty:
-        if selected_format == 'CSV':
+    match selected_format:
+        case Format.CSV.value:
             csv_data = export_to_csv(df_shares)
-            
+                
             st.download_button(
                 label="Download CSV",
                 data=csv_data,
                 file_name="shares_table.csv",
                 mime="text/csv"
             )
+        case Format.Excel.value:
+            buffer = export_to_excel(df_shares)
+            
+            st.download_button(
+                label="Download Excel",
+                data=buffer,
+                file_name="tass-shares.xlsx",
+                mime="application/vnd.ms-excel",
+            )
+        case Format.PDF.value:
+            pdf = export_to_pdf(df_shares)
 
-        else:
-            if st.button("Download Excel"):
-                excel_path = export_to_excel(df_shares)
+            st.download_button(
+                label="Download PDF",
+                data=bytes(pdf.output()),
+                file_name="tass-shares.pdf",
+                mime="application/pdf",
+            )
+        case _:
+            pass
