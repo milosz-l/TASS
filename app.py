@@ -97,15 +97,19 @@ else:
     st.write('No data to display for selected entities and substances.')
 
 # --- Visualizations Section ---
-st.header('Visualizations')
+st.subheader('Visualizations')
 
-df_entity_shares = create_entity_shares_data(selected_entities, selected_substances, shares)
-entities_fig = px.pie(df_entity_shares, names='Entities', values='Shares', title='Entity share in reimbursments')
-st.plotly_chart(entities_fig)
+if not df_shares.empty:
+    df_entity_shares = create_entity_shares_data(selected_entities, selected_substances, shares)
+    entities_fig = px.pie(df_entity_shares, names='Entities', values='Shares', title='Entity share in reimbursments')
+    st.plotly_chart(entities_fig)
 
-df_substance_shares = create_substance_shares_data(selected_entities, selected_substances, shares)
-substances_fig = px.pie(df_substance_shares, names='Substances', values='Shares', title='Substance share in reimbursments')
-st.plotly_chart(substances_fig)
+    df_substance_shares = create_substance_shares_data(selected_entities, selected_substances, shares)
+    substances_fig = px.pie(df_substance_shares, names='Substances', values='Shares', title='Substance share in reimbursments')
+    st.plotly_chart(substances_fig)
+
+else:
+    st.write('No data to display for selected entities and substances.')
 
 with st.expander('Export Data', expanded=False):
     # Data Export format selection
