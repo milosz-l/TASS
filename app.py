@@ -1,24 +1,26 @@
-from collections import defaultdict
-from dotenv import load_dotenv
-from enum import Enum
 import os
 import pandas as pd
-from functions import *
-import plotly.express as px
-from pymongo import MongoClient
 import streamlit as st
+import plotly.express as px
+
+from enum import Enum
+from functions import *
+from dotenv import load_dotenv
+from pymongo import MongoClient
+from collections import defaultdict
+
 
 class Format(Enum):
     CSV = 'CSV'
     Excel = 'Excel'
     PDF = 'PDF'
 
+
 load_dotenv()
 
 MONGODB_URI = os.getenv('MONGODB_URI')
 
-st.set_page_config(page_title="TASS", page_icon="💬", layout="wide")
-
+st.set_page_config(page_title="TASS", page_icon="💬")
 st.title('💊 Reimbursed Medicines Analysis')
 st.write('Welcome to the application that allows analysis of reimbursed medicines in Poland!')
 
@@ -27,6 +29,7 @@ st.header('Input Parameters')
 
 try:
     client = MongoClient(MONGODB_URI)
+
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
     exit()
@@ -52,8 +55,6 @@ for item in data:
 
 substances = list(substances)
 entities = list(entities)
-
-st.write(shares) # FOR TESTS ONLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # Active Substances selection
 selected_substances = st.multiselect('Select active substances:', substances)
