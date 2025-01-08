@@ -3,8 +3,8 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 
+from utils import *
 from enum import Enum
-from functions import *
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from collections import defaultdict
@@ -18,6 +18,8 @@ class Format(Enum):
 
 load_dotenv()
 
+COLLECTION_NAME = os.getenv('COLLECTION_NAME')
+DATABASE_NAME = os.getenv('DATABASE_NAME')
 MONGODB_URI = os.getenv('MONGODB_URI')
 
 st.set_page_config(page_title="TASS", page_icon="💬")
@@ -34,10 +36,7 @@ except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
     exit()
 
-database_name = "project-data"
-collection_name = "medicines"
-
-data = fetch_data(client, database_name, collection_name)
+data = fetch_data(client, DATABASE_NAME, COLLECTION_NAME)
 
 entities = set()
 substances = set()
@@ -102,14 +101,19 @@ st.subheader('Visualizations')
 
 if not df_shares.empty:
     df_entity_shares = create_entity_shares_data(selected_entities, selected_substances, shares)
-    entities_fig = px.pie(df_entity_shares, names='Entities', values='Shares', title='Entity share in reimbursments')
-    entities_fig.update_layout(legend=dict(font=dict(size=8), itemwidth=30))
-    st.plotly_chart(entities_fig)
-
     df_substance_shares = create_substance_shares_data(selected_entities, selected_substances, shares)
-    substances_fig = px.pie(df_substance_shares, names='Substances', values='Shares', title='Substance share in reimbursments')
-    substances_fig.update_layout(legend=dict(font=dict(size=8), itemwidth=30))
-    st.plotly_chart(substances_fig)
+
+    if df_entity_shares.empty or df_substance_shares.empty:
+        st.write('No data to display for selected entities and substances.')
+    
+    else: 
+        entities_fig = px.pie(df_entity_shares, names='Entities', values='Shares', title='Entity share in reimbursments')
+        entities_fig.update_layout(legend=dict(font=dict(size=8), itemwidth=30))
+        st.plotly_chart(entities_fig)
+
+        substances_fig = px.pie(df_substance_shares, names='Substances', values='Shares', title='Substance share in reimbursments')
+        substances_fig.update_layout(legend=dict(font=dict(size=8), itemwidth=30))
+        st.plotly_chart(substances_fig)
 
 else:
     st.write('No data to display for selected entities and substances.')

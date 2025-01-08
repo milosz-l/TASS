@@ -19,9 +19,11 @@ def create_entity_shares_data(entities: list[str], substances: list[str], shares
         entity_shares.append(share)
         total_shares += share
 
+    if total_shares == 0:
+        return pd.DataFrame()
+
     for index, entity in enumerate(entity_shares):
-        if total_shares > 0:
-            entity_shares[index] = entity / total_shares
+        entity_shares[index] = entity / total_shares
 
     entity_shares_data = {
         'Entities': entities,
@@ -44,9 +46,11 @@ def create_substance_shares_data(entities: list[str], substances: list[str], sha
         substance_shares.append(share)
         total_shares += share
 
+    if total_shares == 0:
+        return pd.DataFrame()
+
     for index, entity in enumerate(substance_shares):
-        if total_shares > 0:
-            substance_shares[index] = entity / total_shares
+        substance_shares[index] = entity / total_shares
 
     substance_shares_data = {
         'Shares': substance_shares,
