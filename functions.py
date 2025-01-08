@@ -1,21 +1,27 @@
-from collections import defaultdict
-from fpdf import FPDF
 import io
 import pandas as pd
+
+from fpdf import FPDF
 from pymongo import MongoClient
+from collections import defaultdict
+
 
 def create_entity_shares_data(entities: list[str], substances: list[str], shares: defaultdict):
     total_shares = 0
     entity_shares = []
+    
     for entity in entities:
         share = 0
+        
         for substance in substances:
             share += shares[entity][substance]
+        
         entity_shares.append(share)
         total_shares += share
 
     for index, entity in enumerate(entity_shares):
-        entity_shares[index] = entity / total_shares
+        if total_shares > 0:
+            entity_shares[index] = entity / total_shares
 
     entity_shares_data = {
         'Entities': entities,
@@ -24,18 +30,23 @@ def create_entity_shares_data(entities: list[str], substances: list[str], shares
     
     return pd.DataFrame(entity_shares_data)
 
+
 def create_substance_shares_data(entities: list[str], substances: list[str], shares: defaultdict):
     total_shares = 0
     substance_shares = []
+    
     for substance in substances:
         share = 0
+        
         for entity in entities:
             share += shares[entity][substance]
+        
         substance_shares.append(share)
         total_shares += share
 
     for index, entity in enumerate(substance_shares):
-        substance_shares[index] = entity / total_shares
+        if total_shares > 0:
+            substance_shares[index] = entity / total_shares
 
     substance_shares_data = {
         'Shares': substance_shares,
@@ -44,10 +55,10 @@ def create_substance_shares_data(entities: list[str], substances: list[str], sha
     
     return pd.DataFrame(substance_shares_data)
 
+
 def export_to_csv(dataframe: pd.DataFrame):
-    csv = dataframe.to_csv(index=False, sep=';')
-    
-    return csv
+    return dataframe.to_csv(index=False, sep=';')
+
 
 def export_to_excel(dataframe: pd.DataFrame):
     buffer = io.BytesIO()
@@ -56,6 +67,7 @@ def export_to_excel(dataframe: pd.DataFrame):
     writer.close()
 
     return buffer
+
 
 def export_to_pdf(dataframe: pd.DataFrame):
     pdf = FPDF()
@@ -67,6 +79,7 @@ def export_to_pdf(dataframe: pd.DataFrame):
     pdf.write_html(dataframe.to_html(index=False).replace('<td>', '<td align="center" bgcolor="#D3D3D3">'))
     
     return pdf
+
 
 def fetch_data(client: MongoClient, db_name: str, collection_name: str, query: dict | None=None):
     try:
@@ -81,3 +94,4 @@ def fetch_data(client: MongoClient, db_name: str, collection_name: str, query: d
         print(f"Error fetching data: {e}")
         
         return []
+    
