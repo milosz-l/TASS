@@ -19,6 +19,8 @@ poetry install
 
 ### Starting the application
 
+Before running the app, make sure that you have `.env` file set correctly (based on `.env.example`).
+
 ```bash
 poetry run streamlit run app.py
 ```
