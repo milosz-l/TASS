@@ -74,8 +74,17 @@ st.subheader('Medicines List')
 
 if filtered_medicines:
     with st.expander('Medicines List', expanded=False):
+        medicines_data = []
         for med in filtered_medicines:
-            st.write(f'- {med}')
+            substance_for_med = next((substance for substance, meds in medicines.items() if med in meds), "Unknown")
+            manufacturer_for_med = next((item['manufacturer'] for item in data if item['drug'] == med), "Unknown")
+            medicines_data.append({
+                "Medicine": med,
+                "Substance": substance_for_med,
+                "Manufacturer": manufacturer_for_med
+            })
+        
+        st.dataframe(pd.DataFrame(medicines_data))
 
 else:
     st.write('No medicines selected.')
